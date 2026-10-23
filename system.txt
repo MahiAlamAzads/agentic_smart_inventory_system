@@ -1,0 +1,15 @@
+items with {
+    id (serial)
+    name
+    sku
+    barcode
+    category
+    unit price
+    sell price range
+    stock
+    low stock reminder
+    total_sell
+    returned
+    updated at
+    created at
+}
