@@ -1,10 +1,12 @@
-function ProductForm({ setIsOpen }) {
+import { X } from "lucide-react";
+
+function ProductForm({ setIsOpen }: { setIsOpen: (isOpen: boolean) => void }) {
   return (
     <form className="flex flex-col gap-4 border p-8">
       <div className="flex justify-end">
-        <span className="p-1 border-2 inline-block cursor-pointer">x</span>
+        <X className="p-1 border" onClick={() => setIsOpen(false)} />
       </div>
-      
+
       <div className="flex gap-4">
         <div className="flex flex-col gap-1">
           <label htmlFor="name">Product Name</label>
