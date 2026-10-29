@@ -13,7 +13,11 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5002;
 
-app.use(cors());
+app.use(
+  cors({
+    origin: "http://localhost:5001",
+  }),
+);
 app.use(express.json());
 
 // Health check
@@ -90,7 +94,7 @@ app.get(
  * GET	/inventory/:id/stock-movements	View the item's stock-in/out history
  * GET	/stock-movements	            View stock movement history across all items
  * GET	/inventory/summary	            Get total items, total stock, and low-stock counts
- */ 
+ */
 
 // Add an item
 app.post(
@@ -125,9 +129,9 @@ app.post(
         sku,
         barcode || null,
         category || null,
-        cost_price,
-        sell_price_min,
-        sell_price_max,
+        cost_price || 0,
+        sell_price_min || 0,
+        sell_price_max || 0,
         stock,
         low_stock_reminder,
       ],
@@ -173,11 +177,11 @@ app.put(
         sku,
         barcode || null,
         category || null,
-        cost_price,
-        sell_price_min,
-        sell_price_max,
-        stock,
-        low_stock_reminder,
+        cost_price || 0,
+        sell_price_min || 0,
+        sell_price_max || 0,
+        stock || 0,
+        low_stock_reminder || 5,
         id,
       ],
     );
