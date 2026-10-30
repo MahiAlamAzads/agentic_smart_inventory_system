@@ -1,6 +1,10 @@
 import { useState, type ChangeEvent, type FormEvent } from "react";
 import ScanButtons from "./ScanButtons";
-import { scanAttachment, createInventory, type ScannedProductData } from "../apiHandler/api";
+import {
+  scanAttachment,
+  createInventory,
+  type ScannedProductData,
+} from "../apiHandler/api";
 import { CheckCircle2, AlertCircle, Sparkles } from "lucide-react";
 
 const initialValues = {
@@ -21,7 +25,9 @@ interface ProductFormProps {
 
 function ProductForm({ onSuccess }: ProductFormProps) {
   const [formData, setFormData] = useState(initialValues);
-  const [scannedData, setScannedData] = useState<ScannedProductData | null>(null);
+  const [scannedData, setScannedData] = useState<ScannedProductData | null>(
+    null,
+  );
   const [isScanning, setIsScanning] = useState(false);
   const [scanStatus, setScanStatus] = useState<{
     type: "success" | "error";
@@ -58,7 +64,9 @@ function ProductForm({ onSuccess }: ProductFormProps) {
           barcode: data.barcode ?? prev.barcode,
           category: data.category ?? prev.category,
           cost_price:
-            data.cost_price !== undefined ? String(data.cost_price) : prev.cost_price,
+            data.cost_price !== undefined
+              ? String(data.cost_price)
+              : prev.cost_price,
           sell_price_min:
             data.sell_price_min !== undefined
               ? String(data.sell_price_min)
@@ -81,7 +89,9 @@ function ProductForm({ onSuccess }: ProductFormProps) {
       } else {
         setScanStatus({
           type: "error",
-          message: response.error || "Failed to extract product data from the document.",
+          message:
+            response.error ||
+            "Failed to extract product data from the document.",
         });
       }
     } catch (err: unknown) {

@@ -1,5 +1,6 @@
 import { SquarePen, Trash } from "lucide-react";
 import { Switch } from "./ui/switch";
+import { useEffect, useState } from "react";
 
 interface Inventory {
   barcode: string;
@@ -18,6 +19,38 @@ interface Inventory {
   updated_at: string;
 }
 const InventoryList = ({ items }: { items: Inventory[] | undefined }) => {
+  const [data, setData] = useState(items);
+
+  useEffect(() => {
+    if (items) {
+      setData(items);
+    }
+  }, [items]);
+
+  const handleDelete = async (id: number) => {
+    const url = `http://localhost:5002/inventory/${id}`;
+
+    try {
+      const response = await fetch(url, {
+        method: "DELETE",
+      });
+
+      // Check if the server responded with a successful status (200-299)
+      if (!response.ok) {
+        throw new Error(`Failed to delete resource: ${response.status}`);
+      }
+      setData((currentData) => currentData?.filter((item) => item.id !== id));
+
+      console.log("Resource deleted successfully");
+
+      // Note: Many APIs return an empty response for DELETE.
+      // Only parse JSON if your API specifically returns a response body.
+      // const data = await response.json();
+    } catch (error) {
+      console.error("Error during DELETE request:", error);
+    }
+  };
+
   return (
     <div className="overflow-x-auto p-4">
       <table className="min-w-full overflow-hidden rounded-lg bg-white text-left text-sm shadow-sm border">
@@ -57,7 +90,7 @@ const InventoryList = ({ items }: { items: Inventory[] | undefined }) => {
         </thead>
 
         <tbody className="">
-          {items?.map((item) => (
+          {data?.map((item) => (
             <tr key={item.id} className="hover:bg-gray-50">
               <td className="whitespace-nowrap px-4 py-3 font-medium border">
                 #{item.id}
@@ -94,7 +127,7 @@ const InventoryList = ({ items }: { items: Inventory[] | undefined }) => {
                 {item.low_stock_reminder}
               </td>
               <td className="whitespace-nowrap px-4 py-3 border flex gap-1 justify-center items-center">
-                <Trash />
+                <Trash onClick={() => handleDelete(item.id)} />
                 <SquarePen />
                 <Switch />
               </td>
