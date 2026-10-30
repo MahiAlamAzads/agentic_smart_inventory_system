@@ -4,9 +4,12 @@ import express, {
   type Response,
 } from "express";
 import cors from "cors";
+import multer from "multer";
 import dotenv from "dotenv";
 import { pool } from "./db.js";
 import { asyncHandler } from "./lib/asyncHandler.js";
+import { generateWithAttachment } from "./lib/ai.js";
+const upload = multer({ storage: multer.memoryStorage() });
 
 dotenv.config();
 
@@ -250,6 +253,35 @@ app.post(
     }
 
     return res.status(200).json(result.rows[0]);
+  }),
+);
+
+app.post(
+  "/scan-attachment",
+  upload.single("attachment"), // 👈 Required: populates req.file
+  asyncHandler(async (req: Request, res: Response) => {
+    const file = req.file;
+
+    // TypeScript requires narrowing down because req.file can be undefined
+    if (!file) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "No file uploaded. Please attach a file under the 'attachment' key.",
+      });
+    }
+
+    const prompt =
+      (req.body.prompt as string) || "Please analyze this document.";
+
+    const result = await generateWithAttachment({
+      prompt: prompt,
+      buffer: file.buffer,
+      mimeType: file.mimetype,
+      filename: file.originalname,
+    });
+
+    res.json({ success: true, text: result });
   }),
 );
 
