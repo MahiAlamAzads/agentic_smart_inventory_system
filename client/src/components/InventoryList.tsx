@@ -1,7 +1,6 @@
 import { SquarePen, Trash } from "lucide-react";
 import { Switch } from "./ui/switch";
 
-
 interface Inventory {
   barcode: string;
   category: string;
@@ -18,7 +17,7 @@ interface Inventory {
   total_sell: number;
   updated_at: string;
 }
-const InventoryList = ({ items }: { items: Inventory[] }) => {
+const InventoryList = ({ items }: { items: Inventory[] | undefined }) => {
   return (
     <div className="overflow-x-auto p-4">
       <table className="min-w-full overflow-hidden rounded-lg bg-white text-left text-sm shadow-sm border">

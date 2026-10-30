@@ -1,50 +1,56 @@
-import { useRef } from "react";
-import { Camera, Upload } from "lucide-react";
+import { Upload, Loader2 } from "lucide-react";
+import type { ChangeEvent } from "react";
 
+export interface ScanButtonsProps {
+  onFileSelect?: (file: File) => void;
+  isScanning?: boolean;
+}
 
 export function ScanButtons({
-  onCameraClick,
   onFileSelect,
-}: {
-  onCameraClick?: () => void;
-  onFileSelect?: (file: File) => void;
-}) {
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  isScanning = false,
+}: ScanButtonsProps) {
+  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file && onFileSelect) {
       onFileSelect(file);
     }
+    e.target.value = ""; // allows picking the same file again
   };
 
   return (
-    <div className="grid grid-cols-2 gap-4">
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*"
-        className="hidden"
-        onChange={handleFileChange}
-      />
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center gap-2">
+        <label
+          className={`flex items-center justify-center gap-2 rounded-md border border-gray-800 bg-black px-4 py-2 text-sm font-medium text-gray-100 transition shadow-sm ${
+            isScanning
+              ? "opacity-60 cursor-not-allowed"
+              : "cursor-pointer hover:bg-neutral-800 active:scale-[0.98]"
+          }`}
+        >
+          {isScanning ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Upload className="h-4 w-4" />
+          )}
+          <span>{isScanning ? "Scanning document..." : "Scan Document / Invoice"}</span>
+          <input
+            type="file"
+            accept="image/*,application/pdf,.docx,.txt,.csv,.md"
+            className="hidden"
+            disabled={isScanning}
+            onChange={handleFileChange}
+          />
+        </label>
 
-      <button
-        type="button"
-        onClick={onCameraClick}
-        className="flex items-center justify-center gap-2 rounded-md bg-blue-500 px-4 py-2 font-medium text-white transition hover:bg-blue-600"
-      >
-        <Camera className="h-4 w-4" />
-        Scan By Camera
-      </button>
-
-      <button
-        type="button"
-        onClick={() => fileInputRef.current?.click()}
-        className="flex items-center justify-center gap-2 rounded-md border border-gray-300 bg-white px-4 py-2 font-medium text-gray-700 transition hover:bg-gray-50"
-      >
-        <Upload className="h-4 w-4" />
-        Scan By File
-      </button>
+        {isScanning && (
+          <span className="text-xs text-muted-foreground animate-pulse">
+            Analyzing attachment with AI...
+          </span>
+        )}
+      </div>
     </div>
   );
 }
+
+export default ScanButtons;

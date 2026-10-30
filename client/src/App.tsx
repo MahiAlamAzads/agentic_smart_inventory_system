@@ -3,8 +3,6 @@ import ProductForm from "./components/ProductForm";
 import Modal from "./components/Modal";
 import InventoryList from "./components/InventoryList";
 
-
-
 interface Inventory {
   barcode: string;
   category: string;
@@ -25,35 +23,46 @@ interface Inventory {
 export default function App() {
   const [isOpen, setIsOpen] = useState(false);
   const [data, setData] = useState<Inventory[]>();
-  console.log(data);
+
   const getProducts = async () => {
-    const res = await fetch("http://localhost:5002/inventory");
-    const data: Inventory[] = await res.json();
-    setData(data);
+    try {
+      const res = await fetch("http://localhost:5002/inventory");
+      const data: Inventory[] | undefined = await res.json();
+      setData(data);
+    } catch (err) {
+      console.error("Failed to load inventory:", err);
+    }
   };
+
   useEffect(() => {
     getProducts();
   }, []);
+
   return (
     <div className="min-h-screen flex flex-col max-w-7xl mx-auto">
       <nav className="p-1 border">
         <button
           onClick={() => setIsOpen((prev) => !prev)}
-          className="border p-2 bg-amber-200"
+          className="border p-2 bg-amber-200 hover:bg-amber-300 font-medium cursor-pointer rounded"
         >
           Add Items
         </button>
       </nav>
 
       <Modal
-        title="add products"
+        title="Add Product"
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
       >
-        <ProductForm />
+        <ProductForm
+          onSuccess={() => {
+            setIsOpen(false);
+            getProducts();
+          }}
+        />
       </Modal>
 
-     <InventoryList items={data}/>
+      <InventoryList items={data} />
     </div>
   );
 }
