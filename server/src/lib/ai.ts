@@ -1,29 +1,29 @@
-import { GoogleGenAI, type Part } from "@google/genai";
+import { GoogleGenAI, type Part, type Schema } from "@google/genai";
 import mammoth from "mammoth";
 
-const ai = new GoogleGenAI(); // Reads GEMINI_API_KEY from process.env
+const ai = new GoogleGenAI();
 
 export interface GenerateWithAttachmentParams {
   prompt: string;
   buffer: Buffer;
   mimeType: string;
   filename?: string;
+  systemPrompt?: string;
+  responseSchema?: Schema; // 👈 Add response schema type
 }
 
-/**
- * Universal attachment processor for Gemini with TypeScript typing
- */
 export async function generateWithAttachment({
   prompt,
   buffer,
   mimeType,
   filename = "",
+  systemPrompt,
+  responseSchema,
 }: GenerateWithAttachmentParams): Promise<string | null> {
   try {
-    // Array accepts string prompts and Part objects (like inlineData)
     const contents: Array<string | Part> = [];
 
-    // 1. Handle DOCX files -> Extract plain text first
+    // 1. DOCX Handling
     const isDocx =
       mimeType ===
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
@@ -35,7 +35,7 @@ export async function generateWithAttachment({
         `--- ATTACHED DOCX CONTENT ---\n${extractedText}\n--- END OF ATTACHMENT ---`,
       );
     }
-    // 2. Handle Plain Text files (.txt, .md, .csv)
+    // 2. Text / CSV / Markdown Handling
     else if (
       mimeType.startsWith("text/") ||
       filename.toLowerCase().endsWith(".txt") ||
@@ -47,7 +47,7 @@ export async function generateWithAttachment({
         `--- ATTACHED TEXT CONTENT ---\n${textContent}\n--- END OF ATTACHMENT ---`,
       );
     }
-    // 3. Handle Native Multimodal files (PDF & Images)
+    // 3. Native Multimodal (PDF, PNG, JPG, WebP)
     else {
       contents.push({
         inlineData: {
@@ -57,13 +57,20 @@ export async function generateWithAttachment({
       });
     }
 
-    // Append the user's prompt
     contents.push(prompt);
 
-    // Call Gemini
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
-      contents: contents,
+      contents,
+      config: {
+        ...(systemPrompt ? { systemInstruction: systemPrompt } : {}),
+        ...(responseSchema
+          ? {
+              responseMimeType: "application/json",
+              responseSchema: responseSchema,
+            }
+          : {}),
+      },
     });
 
     return response.text ?? null;

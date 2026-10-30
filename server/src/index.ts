@@ -9,6 +9,10 @@ import dotenv from "dotenv";
 import { pool } from "./db.js";
 import { asyncHandler } from "./lib/asyncHandler.js";
 import { generateWithAttachment } from "./lib/ai.js";
+import {
+  productFormSchema,
+  productScanSystemPrompt,
+} from "./lib/systemPromptFOrPdfScan.js";
 const upload = multer({ storage: multer.memoryStorage() });
 
 dotenv.config();
@@ -258,30 +262,53 @@ app.post(
 
 app.post(
   "/scan-attachment",
-  upload.single("attachment"), // 👈 Required: populates req.file
+  upload.single("attachment"),
   asyncHandler(async (req: Request, res: Response) => {
     const file = req.file;
 
-    // TypeScript requires narrowing down because req.file can be undefined
     if (!file) {
       return res.status(400).json({
         success: false,
-        message:
+        error:
           "No file uploaded. Please attach a file under the 'attachment' key.",
       });
     }
 
     const prompt =
-      (req.body.prompt as string) || "Please analyze this document.";
+      (req.body.prompt as string) ||
+      "Extract product and pricing information from this document for inventory registration.";
 
     const result = await generateWithAttachment({
-      prompt: prompt,
+      prompt,
       buffer: file.buffer,
       mimeType: file.mimetype,
       filename: file.originalname,
+      systemPrompt: productScanSystemPrompt,
+      responseSchema: productFormSchema,
     });
 
-    res.json({ success: true, text: result });
+    if (!result) {
+      return res.status(502).json({
+        success: false,
+        error: "No response received from the extraction model.",
+      });
+    }
+
+    try {
+      // With responseSchema active, result is guaranteed to be a valid JSON string
+      const parsedData = JSON.parse(result);
+
+      return res.json({
+        success: true,
+        data: parsedData,
+      });
+    } catch {
+      return res.status(500).json({
+        success: false,
+        error: "Failed to parse model response into JSON.",
+        raw: result,
+      });
+    }
   }),
 );
 
