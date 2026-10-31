@@ -4,6 +4,7 @@ import {
   scanAttachment,
   createInventory,
   type ScannedProductData,
+  updateInventoryItem,
 } from "../apiHandler/api";
 import { CheckCircle2, AlertCircle, Sparkles } from "lucide-react";
 
@@ -20,10 +21,12 @@ const initialValues = {
 };
 
 interface ProductFormProps {
+  id?: number | null | undefined;
   onSuccess?: () => void;
+  formMode: "CREATE" | "UPDATE";
 }
 
-function ProductForm({ onSuccess }: ProductFormProps) {
+function ProductForm({ id, onSuccess, formMode }: ProductFormProps) {
   const [formData, setFormData] = useState(initialValues);
   const [scannedData, setScannedData] = useState<ScannedProductData | null>(
     null,
@@ -126,7 +129,11 @@ function ProductForm({ onSuccess }: ProductFormProps) {
         low_stock_reminder: Number(formData.low_stock_reminder) || 5,
       };
 
-      await createInventory(payload);
+      if (formMode === "CREATE") {
+        await createInventory(payload);
+      } else {
+        await updateInventoryItem(id, payload);
+      }
       setFormData(initialValues);
       setScannedData(null);
       setScanStatus(null);

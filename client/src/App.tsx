@@ -55,6 +55,7 @@ export default function App() {
         onClose={() => setIsOpen(false)}
       >
         <ProductForm
+          formMode="UPDATE"
           onSuccess={() => {
             setIsOpen(false);
             getProducts();

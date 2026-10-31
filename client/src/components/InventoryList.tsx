@@ -1,6 +1,8 @@
 import { SquarePen, Trash } from "lucide-react";
 import { Switch } from "./ui/switch";
 import { useEffect, useState } from "react";
+import Modal from "./Modal";
+import ProductForm from "./ProductForm";
 
 interface Inventory {
   barcode: string;
@@ -19,13 +21,23 @@ interface Inventory {
   updated_at: string;
 }
 const InventoryList = ({ items }: { items: Inventory[] | undefined }) => {
+  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [selectedData, setSelectedData] = useState()
   const [data, setData] = useState(items);
-
+  const [isOpen, setIsOpen] = useState(false);
   useEffect(() => {
     if (items) {
       setData(items);
     }
   }, [items]);
+
+  useEffect(()=>{
+    setSelectedData((currentData) => currentData?.filter((item) => item.id !== id))
+  }, [selectedId, ])
+
+  const openUpdateModal = () => {
+    setIsOpen((prev) => !prev);
+  };
 
   const handleDelete = async (id: number) => {
     const url = `http://localhost:5002/inventory/${id}`;
@@ -128,13 +140,31 @@ const InventoryList = ({ items }: { items: Inventory[] | undefined }) => {
               </td>
               <td className="whitespace-nowrap px-4 py-3 border flex gap-1 justify-center items-center">
                 <Trash onClick={() => handleDelete(item.id)} />
-                <SquarePen />
+                <SquarePen
+                  onClick={() => {
+                    setSelectedId(item.id);
+                    openUpdateModal();
+                  }}
+                />
                 <Switch />
               </td>
             </tr>
           ))}
         </tbody>
       </table>
+      <Modal
+        title="Add Product"
+        isOpen={isOpen}
+        onClose={() => setIsOpen(false)}
+      >
+        <ProductForm
+          id={selectedId}
+          formMode="CREATE"
+          onSuccess={() => {
+            setIsOpen(false);
+          }}
+        />
+      </Modal>
     </div>
   );
 };

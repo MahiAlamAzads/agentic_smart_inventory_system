@@ -48,12 +48,15 @@ export interface CreateInventoryPayload {
   low_stock_reminder?: number;
 }
 
+// 1. Reusable update type: all fields optional
+export type UpdateInventoryPayload = Partial<CreateInventoryPayload>;
+
 /**
  * Scan an invoice, receipt, document, or product tag using Gemini multimodal AI
  */
 export async function scanAttachment(
   file: File,
-  prompt?: string
+  prompt?: string,
 ): Promise<ScanAttachmentResponse> {
   const formData = new FormData();
   formData.append("attachment", file);
@@ -91,7 +94,7 @@ export async function getInventory(params?: {
  * Create a new inventory item
  */
 export async function createInventory(
-  payload: CreateInventoryPayload
+  payload: CreateInventoryPayload,
 ): Promise<InventoryItem> {
   const response = await fetch(`${API_BASE_URL}/inventory`, {
     method: "POST",
@@ -104,3 +107,20 @@ export async function createInventory(
   return handleApiResponse<InventoryItem>(response);
 }
 
+/**
+ * Update an existing inventory item
+ */
+export async function updateInventoryItem(
+  id: number | undefined | null,
+  payload: UpdateInventoryPayload,
+): Promise<InventoryItem> {
+  const response = await fetch(`${API_BASE_URL}/inventory/${id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  return handleApiResponse<InventoryItem>(response);
+}
