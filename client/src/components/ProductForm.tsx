@@ -8,7 +8,37 @@ import {
 } from "../apiHandler/api";
 import { CheckCircle2, AlertCircle, Sparkles } from "lucide-react";
 
-const initialValues = {
+interface ProductFormData {
+  [key: string]: string;
+  name: string;
+  sku: string;
+  barcode: string;
+  category: string;
+  cost_price: string;
+  sell_price_min: string;
+  sell_price_max: string;
+  stock: string;
+  low_stock_reminder: string;
+}
+
+interface ScanStatus {
+  type: "success" | "error";
+  message: string;
+}
+
+interface InventoryPayload {
+  name: string;
+  sku: string;
+  barcode: string | null;
+  category: string | null;
+  cost_price: number;
+  sell_price_min: number;
+  sell_price_max: number;
+  stock: number;
+  low_stock_reminder: number;
+}
+
+const initialValues: ProductFormData = {
   name: "",
   sku: "",
   barcode: "",
@@ -20,22 +50,57 @@ const initialValues = {
   low_stock_reminder: "",
 };
 
+const formatInitialData = (data?: any): ProductFormData => {
+  if (!data) return initialValues;
+  return {
+    name: String(data.name ?? ""),
+    sku: String(data.sku ?? ""),
+    barcode: String(data.barcode ?? ""),
+    category: String(data.category ?? ""),
+    cost_price:
+      data.cost_price !== undefined && data.cost_price !== null
+        ? String(data.cost_price)
+        : "",
+    sell_price_min:
+      data.sell_price_min !== undefined && data.sell_price_min !== null
+        ? String(data.sell_price_min)
+        : "",
+    sell_price_max:
+      data.sell_price_max !== undefined && data.sell_price_max !== null
+        ? String(data.sell_price_max)
+        : "",
+    stock:
+      data.stock !== undefined && data.stock !== null
+        ? String(data.stock)
+        : "",
+    low_stock_reminder:
+      data.low_stock_reminder !== undefined && data.low_stock_reminder !== null
+        ? String(data.low_stock_reminder)
+        : "",
+  };
+};
+
 interface ProductFormProps {
   id?: number | null | undefined;
   onSuccess?: () => void;
   formMode: "CREATE" | "UPDATE";
+  initialData?: any;
 }
 
-function ProductForm({ id, onSuccess, formMode }: ProductFormProps) {
-  const [formData, setFormData] = useState(initialValues);
+function ProductForm({
+  id,
+  onSuccess,
+  formMode,
+  initialData,
+}: ProductFormProps) {
+  const [formData, setFormData] = useState<ProductFormData>(
+    formatInitialData(initialData),
+  );
   const [scannedData, setScannedData] = useState<ScannedProductData | null>(
     null,
   );
   const [isScanning, setIsScanning] = useState(false);
-  const [scanStatus, setScanStatus] = useState<{
-    type: "success" | "error";
-    message: string;
-  } | null>(null);
+  const [scanStatus, setScanStatus] = useState<ScanStatus | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -46,7 +111,7 @@ function ProductForm({ id, onSuccess, formMode }: ProductFormProps) {
       ...prev,
       [name]: value,
     }));
-  };
+  };  
 
   const handleScan = async (file: File) => {
     setIsScanning(true);
@@ -117,7 +182,7 @@ function ProductForm({ id, onSuccess, formMode }: ProductFormProps) {
     setSubmitError(null);
 
     try {
-      const payload = {
+      const payload: InventoryPayload = {
         name: formData.name.trim(),
         sku: formData.sku.trim(),
         barcode: formData.barcode.trim() || null,

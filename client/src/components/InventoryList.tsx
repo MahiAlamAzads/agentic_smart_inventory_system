@@ -18,25 +18,46 @@ interface Inventory {
   sku: string;
   stock: number;
   total_sell: number;
+  is_active?: boolean;
   updated_at: string;
 }
+
 const InventoryList = ({ items }: { items: Inventory[] | undefined }) => {
   const [selectedId, setSelectedId] = useState<number | null>(null);
-  const [selectedData, setSelectedData] = useState()
+  const selectedItem = items?.find((item) => item.id === selectedId);
   const [data, setData] = useState(items);
   const [isOpen, setIsOpen] = useState(false);
+
   useEffect(() => {
     if (items) {
       setData(items);
     }
   }, [items]);
 
-  useEffect(()=>{
-    setSelectedData((currentData) => currentData?.filter((item) => item.id !== id))
-  }, [selectedId, ])
-
   const openUpdateModal = () => {
     setIsOpen((prev) => !prev);
+  };
+
+  const handleToggleActive = async (id: number, currentStatus: boolean) => {
+    try {
+      const response = await fetch(`http://localhost:5002/inventory/${id}/status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ is_active: !currentStatus }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update status");
+      }
+
+      setData((currentData) =>
+        currentData?.map((item) =>
+          item.id === id ? { ...item, is_active: !currentStatus } : item
+        )
+      );
+    } catch (error) {
+      console.error("Error toggling active status:", error);
+    }
   };
 
   const handleDelete = async (id: number) => {
@@ -47,17 +68,11 @@ const InventoryList = ({ items }: { items: Inventory[] | undefined }) => {
         method: "DELETE",
       });
 
-      // Check if the server responded with a successful status (200-299)
       if (!response.ok) {
         throw new Error(`Failed to delete resource: ${response.status}`);
       }
       setData((currentData) => currentData?.filter((item) => item.id !== id));
-
       console.log("Resource deleted successfully");
-
-      // Note: Many APIs return an empty response for DELETE.
-      // Only parse JSON if your API specifically returns a response body.
-      // const data = await response.json();
     } catch (error) {
       console.error("Error during DELETE request:", error);
     }
@@ -101,9 +116,12 @@ const InventoryList = ({ items }: { items: Inventory[] | undefined }) => {
           </tr>
         </thead>
 
-        <tbody className="">
+        <tbody>
           {data?.map((item) => (
-            <tr key={item.id} className="hover:bg-gray-50">
+            <tr
+              key={item.id}
+              className={`hover:bg-gray-50 ${item.is_active === false ? "opacity-60 bg-gray-50/50" : ""}`}
+            >
               <td className="whitespace-nowrap px-4 py-3 font-medium border">
                 #{item.id}
               </td>
@@ -138,30 +156,45 @@ const InventoryList = ({ items }: { items: Inventory[] | undefined }) => {
               <td className="whitespace-nowrap px-4 py-3 border">
                 {item.low_stock_reminder}
               </td>
-              <td className="whitespace-nowrap px-4 py-3 border flex gap-1 justify-center items-center">
-                <Trash onClick={() => handleDelete(item.id)} />
+              <td className="whitespace-nowrap px-4 py-3 border flex gap-2 justify-center items-center">
+                <Trash
+                  className="h-4 w-4 cursor-pointer text-red-500 hover:text-red-700"
+                  onClick={() => handleDelete(item.id)}
+                />
                 <SquarePen
+                  className="h-4 w-4 cursor-pointer text-blue-500 hover:text-blue-700"
                   onClick={() => {
                     setSelectedId(item.id);
                     openUpdateModal();
                   }}
                 />
-                <Switch />
+                <Switch
+                  checked={item.is_active ?? true}
+                  onCheckedChange={() =>
+                    handleToggleActive(item.id, item.is_active ?? true)
+                  }
+                />
               </td>
             </tr>
           ))}
         </tbody>
       </table>
+
       <Modal
-        title="Add Product"
+        title="Update Product"
         isOpen={isOpen}
-        onClose={() => setIsOpen(false)}
+        onClose={() => {
+          setIsOpen(false);
+          setSelectedId(null);
+        }}
       >
         <ProductForm
+          initialData={selectedItem}
           id={selectedId}
-          formMode="CREATE"
+          formMode="UPDATE"
           onSuccess={() => {
             setIsOpen(false);
+            setSelectedId(null);
           }}
         />
       </Modal>

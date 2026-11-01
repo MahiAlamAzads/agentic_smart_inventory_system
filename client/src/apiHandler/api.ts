@@ -32,6 +32,7 @@ export interface InventoryItem {
   low_stock_reminder: number;
   total_sell: number;
   returned: number;
+  is_active: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -46,6 +47,7 @@ export interface CreateInventoryPayload {
   sell_price_max?: number;
   stock?: number;
   low_stock_reminder?: number;
+  is_active?: boolean;
 }
 
 // 1. Reusable update type: all fields optional

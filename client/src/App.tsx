@@ -17,6 +17,7 @@ interface Inventory {
   sku: string;
   stock: number;
   total_sell: number;
+  is_active: boolean;
   updated_at: string;
 }
 
@@ -55,7 +56,7 @@ export default function App() {
         onClose={() => setIsOpen(false)}
       >
         <ProductForm
-          formMode="UPDATE"
+          formMode="CREATE"
           onSuccess={() => {
             setIsOpen(false);
             getProducts();

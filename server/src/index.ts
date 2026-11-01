@@ -97,12 +97,6 @@ app.get(
   }),
 );
 
-/**
- * GET	/inventory/:id/stock-movements	View the item's stock-in/out history
- * GET	/stock-movements	            View stock movement history across all items
- * GET	/inventory/summary	            Get total items, total stock, and low-stock counts
- */
-
 // Add an item
 app.post(
   "/inventory",
@@ -117,7 +111,16 @@ app.post(
       sell_price_max = 0,
       stock = 0,
       low_stock_reminder = 5,
+      is_active,
+      isActive,
     } = req.body;
+
+    const active =
+      is_active !== undefined
+        ? is_active
+        : isActive !== undefined
+          ? isActive
+          : true;
 
     const result = await pool.query(
       `INSERT INTO items (
@@ -129,8 +132,9 @@ app.post(
                 sell_price_min,
                 sell_price_max,
                 stock,
-                low_stock_reminder
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
+                low_stock_reminder,
+                is_active
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *`,
       [
         name,
         sku,
@@ -141,6 +145,7 @@ app.post(
         sell_price_max || 0,
         stock,
         low_stock_reminder,
+        active,
       ],
     );
 
@@ -152,7 +157,11 @@ app.post(
 app.put(
   "/inventory/:id",
   asyncHandler(async (req: Request, res: Response) => {
-    const { id } = req.params;
+    const itemId = Number(req.params.id);
+    if (!itemId || isNaN(itemId)) {
+      return res.status(400).json({ error: "A valid numeric ID is required." });
+    }
+
     const {
       name,
       sku,
@@ -163,7 +172,16 @@ app.put(
       sell_price_max,
       stock,
       low_stock_reminder,
+      is_active,
+      isActive,
     } = req.body;
+
+    const active =
+      is_active !== undefined
+        ? is_active
+        : isActive !== undefined
+          ? isActive
+          : null;
 
     const result = await pool.query(
       `UPDATE items 
@@ -176,8 +194,9 @@ app.put(
                  sell_price_max = $7,
                  stock = $8,
                  low_stock_reminder = $9,
+                 is_active = COALESCE($10, is_active),
                  updated_at = CURRENT_TIMESTAMP
-             WHERE id = $10 
+             WHERE id = $11 
              RETURNING *`,
       [
         name,
@@ -189,8 +208,43 @@ app.put(
         sell_price_max || 0,
         stock || 0,
         low_stock_reminder || 5,
-        id,
+        active,
+        itemId,
       ],
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Item not found" });
+    }
+
+    return res.status(200).json(result.rows[0]);
+  }),
+);
+
+// Toggle or update item active status
+app.patch(
+  "/inventory/:id/status",
+  asyncHandler(async (req: Request, res: Response) => {
+    const itemId = Number(req.params.id);
+    if (!itemId || isNaN(itemId)) {
+      return res.status(400).json({ error: "A valid numeric ID is required." });
+    }
+
+    const { is_active, isActive } = req.body;
+    const active =
+      is_active !== undefined
+        ? is_active
+        : isActive !== undefined
+          ? isActive
+          : null;
+
+    const result = await pool.query(
+      `UPDATE items 
+             SET is_active = COALESCE($1, NOT is_active),
+                 updated_at = CURRENT_TIMESTAMP
+             WHERE id = $2 
+             RETURNING *`,
+      [active, itemId],
     );
 
     if (result.rows.length === 0) {
@@ -205,11 +259,14 @@ app.put(
 app.delete(
   "/inventory/:id",
   asyncHandler(async (req: Request, res: Response) => {
-    const { id } = req.params;
+    const itemId = Number(req.params.id);
+    if (!itemId || isNaN(itemId)) {
+      return res.status(400).json({ error: "A valid numeric ID is required." });
+    }
 
     const result = await pool.query(
       "DELETE FROM items WHERE id = $1 RETURNING id",
-      [id],
+      [itemId],
     );
 
     if (result.rows.length === 0) {
@@ -226,7 +283,10 @@ app.delete(
 app.post(
   "/inventory/:id/stock-movements",
   asyncHandler(async (req: Request, res: Response) => {
-    const { id } = req.params;
+    const itemId = Number(req.params.id);
+    if (!itemId || isNaN(itemId)) {
+      return res.status(400).json({ error: "A valid numeric ID is required." });
+    }
     const { quantity, stockMovementType } = req.body;
 
     const queries: Record<string, string> = {
@@ -249,7 +309,7 @@ app.post(
                  updated_at = CURRENT_TIMESTAMP 
              WHERE id = $2 
              RETURNING *`,
-      [quantity, id],
+      [quantity, itemId],
     );
 
     if (result.rows.length === 0) {
