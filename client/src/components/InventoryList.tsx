@@ -79,7 +79,7 @@ const InventoryList = ({ items }: { items: Inventory[] | undefined }) => {
   };
 
   return (
-    <div className="overflow-x-auto p-4">
+    <div className="overflow-x-auto">
       <table className="min-w-full overflow-hidden rounded-lg bg-white text-left text-sm shadow-sm border">
         <thead className="bg-gray-100 text-sm uppercase text-gray-900">
           <tr>
